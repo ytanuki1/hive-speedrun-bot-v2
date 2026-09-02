@@ -5,7 +5,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 BOT_NAME = "Hive Speedrun Leaderboard"
 BOT_VERSION = "2.0.0"
-BOT_ACTIVITY_TEXT = "/speedrun | Gravity Leaderboard\nby Yytanuki"
+BOT_ACTIVITY_TEXT = "/speedrun | Gravity Leaderboard\nby Yytanuki\nSuper thanks: lyger"
 
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN", "")
 DEV_GUILD_ID = os.environ.get("DEV_GUILD_ID", "")
