@@ -71,7 +71,7 @@ DIVISIONS = {
     },
     "depths_easy": {
         "label": "Depths (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_depth.jpg",
+        "background_url": "https://cdn.playhive.com/maps/grav_depths.jpg",
         "variable_value_name": "Depths (Easy)"
     },
     "glitched_easy": {
