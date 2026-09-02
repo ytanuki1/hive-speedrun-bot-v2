@@ -4,7 +4,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 BOT_NAME = "Hive Speedrun Leaderboard"
-BOT_VERSION = "1.1.0"
+BOT_VERSION = "2.0.0"
 BOT_ACTIVITY_TEXT = "/speedrun | Gravity Leaderboard\nby Yytanuki"
 
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN", "")
