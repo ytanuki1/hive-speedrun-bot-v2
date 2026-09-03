@@ -1,260 +1,46 @@
+# -*- coding: utf-8 -*-
+import json
+import logging
 import os
+import requests
+
+logger = logging.getLogger("config")
 
 # プロジェクトのルートディレクトリ
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# ------------------------------------------------------------
+# 基本設定・環境変数（シークレットやローカルパス）
+# ------------------------------------------------------------
+DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN", "")
+DEV_GUILD_ID = os.environ.get("DEV_GUILD_ID", "")
+
+CACHE_DIR = os.environ.get("CACHE_DIR", os.path.join(BASE_DIR, "cache"))
+FONT_DIR = os.environ.get("FONT_DIR", os.path.join(BASE_DIR, "fonts"))
+FONT_MOJANGLES = os.path.join(FONT_DIR, "Mojangles.ttf")
+FONT_UNIFONT = os.path.join(FONT_DIR, "Unifont.ttf")
+
+LOCAL_CONFIG_CACHE = os.path.join(CACHE_DIR, "remote_config_backup.json")
+
+# 参照先の設定URL (github.com/blob 形式でも自動で raw.githubusercontent.com に変換されます)
+REMOTE_CONFIG_URL = os.environ.get(
+    "REMOTE_CONFIG_URL",
+    "https://raw.githubusercontent.com/ytanuki1/speedrun-bot-config/main/config.json",
+)
+
+# ------------------------------------------------------------
+# 固定デフォルト値（リモート取得前の初期値・フォールバック用）
+# ------------------------------------------------------------
 BOT_NAME = "Hive Speedrun Leaderboard"
 BOT_VERSION = "2.0.0"
 BOT_ACTIVITY_TEXT = "/speedrun | Gravity Leaderboard\nby Yytanuki\nSuper thanks: lyger"
 
-DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN", "")
-DEV_GUILD_ID = os.environ.get("DEV_GUILD_ID", "")
-
-# GAS環境変数は不要になりましたが、互換性のため残しています
-GAS_WEBAPP_URL = os.environ.get("GAS_WEBAPP_URL", "")
-GAS_API_SECRET = os.environ.get("GAS_API_SECRET", "")
-
-DEFAULT_BACKGROUND_URL = os.environ.get(
-    "DEFAULT_BACKGROUND_URL", "https://i.imgur.com/1gY2pA4.png"
-)
-
-# ------------------------------------------------------------
-# 部門 / マップ設定
-# ------------------------------------------------------------
-DIVISIONS = {
-    # --- 総合（固定選択肢） ---
-    "5maps": {
-        "label": "5 Maps",
-        "background_url": "https://i.imgur.com/1gY2pA4.png",
-        "variable_value_name": "5 maps",
-    },
-    "nocustom": {
-        "label": "5 Maps No Custom Server",
-        "background_url": "https://i.imgur.com/xfFhLxa.png",
-        "variable_value_name": "5 maps (no custom server)",
-    },
-    # --- 個別マップ (Easy) ---
-    "abstract_easy": {
-        "label": "Abstract (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_abstract.jpg",
-        "variable_value_name": "Abstract (Easy)"
-    },
-    "apartments_easy": {
-        "label": "Apartments (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_apartments.jpg",
-        "variable_value_name": "Apartments (Easy)"
-    },
-    "beanstalk_easy": {
-        "label": "Beanstalk (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_beanstalk.jpg",
-        "variable_value_name": "Beanstalk (Easy)"
-    },
-    "beehive_easy": {
-        "label": "Beehive (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_beehive.jpg",
-        "variable_value_name": "Beehive (Easy)"
-    },
-    "concrete_easy": {
-        "label": "Concrete (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_concrete.jpg",
-        "variable_value_name": "Concrete (Easy)"
-    },
-    "cyberpunk_easy": {
-        "label": "Cyberpunk (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_cyberpunk.jpg",
-        "variable_value_name": "Cyberpunk (Easy)"
-    },
-    "data_easy": {
-        "label": "Data (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_beehive.jpg",
-        "variable_value_name": "Data (Easy)"
-    },
-    "depths_easy": {
-        "label": "Depths (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_depths.jpg",
-        "variable_value_name": "Depths (Easy)"
-    },
-    "glitched_easy": {
-        "label": "Glitched (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_glitched.jpg",
-        "variable_value_name": "Glitched (Easy)"
-    },
-    "groovy_easy": {
-        "label": "Groovy (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_groovy.jpg",
-        "variable_value_name": "Groovy (Easy)"
-    },
-    "jungle_easy": {
-        "label": "Jungle (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_jungle.jpg",
-        "variable_value_name": "Jungle (Easy)"
-    },
-    "lava_easy": {
-        "label": "Lava (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_lava.jpg",
-        "variable_value_name": "Lava (Easy)"
-    },
-    "pixels_easy": {
-        "label": "Pixels (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_pixels.jpg",
-        "variable_value_name": "Pixels (Easy)"
-    },
-    "shapes_easy": {
-        "label": "Shapes (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_shapes.jpg",
-        "variable_value_name": "Shapes (Easy)"
-    },
-    "shelves_easy": {
-        "label": "Shelves (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_shelves.jpg",
-        "variable_value_name": "Shelves (Easy)"
-    },
-    "shrine_easy": {
-        "label": "Shrine (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_shrine.jpg",
-        "variable_value_name": "Shrine (Easy)"
-    },
-    "stairs_easy": {
-        "label": "Stairs (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_stairs.jpg",
-        "variable_value_name": "Stairs (Easy)"
-    },
-    "toxic_easy": {
-        "label": "Toxic (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_toxic.jpg",
-        "variable_value_name": "Toxic (Easy)"
-    },
-    "waterways_easy": {
-        "label": "Waterways (Easy)",
-        "background_url": "https://cdn.playhive.com/maps/grav_waterways.jpg",
-        "variable_value_name": "Waterways (Easy)"
-    },
-    "clockwork_medium": {
-        "label": "Clockwork (Medium)",
-        "background_url": "https://cdn.playhive.com/maps/grav_clockwork.jpg",
-        "variable_value_name": "Clockwork (Medium)"
-    },
-    "construction_medium": {
-        "label": "Construction (Medium)",
-        "background_url": "https://cdn.playhive.com/maps/grav_construction.jpg",
-        "variable_value_name": "Construction (Medium)"
-    },
-    "daisies_medium": {
-        "label": "Daisies (Medium)",
-        "background_url": "https://cdn.playhive.com/maps/grav_daisies.jpg",
-        "variable_value_name": "Daisies (Medium)"
-    },
-    "deepscape_medium": {
-        "label": "Deepscape (Medium)",
-        "background_url": "https://cdn.playhive.com/maps/grav_deepscape.jpg",
-        "variable_value_name": "Deepscape (Medium)"
-    },
-    "dimensions_medium": {
-        "label": "Dimensions (Medium)",
-        "background_url": "https://cdn.playhive.com/maps/grav_dimensions.jpg",
-        "variable_value_name": "Dimensions (Medium)"
-    },
-    "dungeon_medium": {
-        "label": "Dungeon (Medium)",
-        "background_url": "https://cdn.playhive.com/maps/grav_dungeon.jpg",
-        "variable_value_name": "Dungeon (Medium)"
-    },
-    "labrinth_medium": {
-        "label": "Labrinth (Medium)",
-        "background_url": "https://cdn.playhive.com/maps/grav_labyrinth.jpg",
-        "variable_value_name": "Labrinth (Medium)"
-    },
-    "lilypads_medium": {
-        "label": "Lilypads (Medium)",
-        "background_url": "https://cdn.playhive.com/maps/grav_lilypads.jpg",
-        "variable_value_name": "Lilypads (Medium)"
-    },
-    "new_orleans_medium": {
-        "label": "New Orleans (Medium)",
-        "background_url": "https://cdn.playhive.com/maps/grav_neworleans.jpg",
-        "variable_value_name": "New Orleans (Medium)"
-    },
-    "post_office_medium": {
-        "label": "Post office (Medium)",
-        "background_url": "https://cdn.playhive.com/maps/grav_postoffice.jpg",
-        "variable_value_name": "Post office (Medium)"
-    },
-    "roadtrip_medium": {
-        "label": "Roadtrip (Medium)",
-        "background_url": "https://cdn.playhive.com/maps/grav_roadtrip.jpg",
-        "variable_value_name": "Roadtrip (Medium)"
-    },
-    "stained_glass_medium": {
-        "label": "Stained Glass (Medium)",
-        "background_url": "https://cdn.playhive.com/maps/grav_stainedglass.jpg",
-        "variable_value_name": "Stained Glass (Medium)"
-    },
-    "tomes_medium": {
-        "label": "Tomes (Medium)",
-        "background_url": "https://cdn.playhive.com/maps/grav_tomes.jpg",
-        "variable_value_name": "Tomes (Medium)"
-    },
-    "burrow_hard": {
-        "label": "Burrow (Hard)",
-        "background_url": "https://cdn.playhive.com/maps/grav_burrow.jpg",
-        "variable_value_name": "Burrow (Hard)"
-    },
-    "circuit_board_hard": {
-        "label": "Circuit Board (Hard)",
-        "background_url": "https://cdn.playhive.com/maps/grav_circuitboard.jpg",
-        "variable_value_name": "Circuit Board (Hard)"
-    },
-    "geometric_hard": {
-        "label": "Geometric (Hard)",
-        "background_url": "https://cdn.playhive.com/maps/grav_geometric.jpg",
-        "variable_value_name": "Geometric (Hard)"
-    },
-    "shanty_town_hard": {
-        "label": "Shanty Town (Hard)",
-        "background_url": "https://cdn.playhive.com/maps/grav_shantytown.jpg",
-        "variable_value_name": "Shanty Town (Hard)"
-    },
-    "space_hard": {
-        "label": "Space (Hard)",
-        "background_url": "https://cdn.playhive.com/maps/grav_space.jpg",
-        "variable_value_name": "Space (Hard)"
-    },
-    "triangles_hard": {
-        "label": "Triangles (Hard)",
-        "background_url": "https://cdn.playhive.com/maps/grav_triangles.jpg",
-        "variable_value_name": "Triangles (Hard)"
-    },
-    "twisted_hard": {
-        "label": "Twisted (Hard)",
-        "background_url": "https://cdn.playhive.com/maps/grav_twisted.jpg",
-        "variable_value_name": "Twisted (Hard)"
-    },
-    "under_the_sea_hard": {
-        "label": "Under The Sea (Hard)",
-        "background_url": "https://cdn.playhive.com/maps/grav_underthesea.jpg",
-        "variable_value_name": "Under The Sea (Hard)"
-    }
-}
-
+DEFAULT_BACKGROUND_URL = "https://i.imgur.com/1gY2pA4.png"
 GAME_NAME = "The Hive"
 GAME_ID = "hive"
 CATEGORY_NAME = "Gravity"
-
-_jp_whitelist_raw = os.environ.get(
-    "JP_WHITELIST",
-    "tanukiYy,AmonHive,AlmondCellar,Suriipu,StoodBird84586,MintGamesYT,maikuragenzin,spring861,TouTubeTomaTV,iroha0515",
-)
-JP_WHITELIST = {
-    name.strip().lower() for name in _jp_whitelist_raw.split(",") if name.strip()
-}
 JP_COUNTRY_CODE = "JP"
-
-CACHE_DIR = os.environ.get("CACHE_DIR", os.path.join(BASE_DIR, "cache"))
 CACHE_TTL_MINUTES = 60
-
-FONT_DIR = os.environ.get("FONT_DIR", os.path.join(BASE_DIR, "fonts"))
-FONT_MOJANGLES = os.path.join(FONT_DIR, "Mojangles.ttf")
-FONT_UNIFONT = os.path.join(FONT_DIR, "Unifont.ttf")
 
 IMAGE_WIDTH = 1010
 ROW_HEIGHT = 68
@@ -265,9 +51,7 @@ ROWS_PER_PAGE = 10
 MAX_ROWS_WORLD_DISPLAY = 40
 MAX_ROWS_JP_DISPLAY = 20
 
-LOGO_URL = os.environ.get(
-    "LOGO_URL", "https://playhive.com/_next/static/media/Hive.9ce7fa58.png"
-)
+LOGO_URL = "https://playhive.com/_next/static/media/Hive.9ce7fa58.png"
 LOGO_HEIGHT = 34
 BACKGROUND_BLUR_RADIUS = 4
 BACKGROUND_DARKEN_ALPHA = 130
@@ -296,3 +80,110 @@ COLORS = {
     "platform_red": (215, 80, 80, 255),
     "shadow": (0, 0, 0, 160),
 }
+
+# リモートから注入される動的設定
+JP_WHITELIST: set[str] = set()
+DIVISIONS: dict[str, dict] = {}
+
+
+# ------------------------------------------------------------
+# リモートJSON取得 & 反映ロジック
+# ------------------------------------------------------------
+def _to_raw_url(url: str) -> str:
+    """GitHubの通常ページURLが指定された場合、Raw URLに変換する"""
+    if "github.com" in url and "/blob/" in url:
+        return url.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/")
+    return url
+
+
+def _apply_config_data(data: dict) -> None:
+    """取得した辞書データをグローバル変数へ反映"""
+    global BOT_NAME, BOT_VERSION, BOT_ACTIVITY_TEXT
+    global DEFAULT_BACKGROUND_URL, GAME_NAME, GAME_ID, CATEGORY_NAME
+    global JP_COUNTRY_CODE, CACHE_TTL_MINUTES, LOGO_URL
+    global JP_WHITELIST, DIVISIONS
+
+    if "bot_name" in data:
+        BOT_NAME = data["bot_name"]
+    if "bot_version" in data:
+        BOT_VERSION = data["bot_version"]
+    if "bot_activity_text" in data:
+        BOT_ACTIVITY_TEXT = data["bot_activity_text"]
+    if "default_background_url" in data:
+        DEFAULT_BACKGROUND_URL = data["default_background_url"]
+    if "game_name" in data:
+        GAME_NAME = data["game_name"]
+    if "game_id" in data:
+        GAME_ID = data["game_id"]
+    if "category_name" in data:
+        CATEGORY_NAME = data["category_name"]
+    if "jp_country_code" in data:
+        JP_COUNTRY_CODE = data["jp_country_code"]
+    if "cache_ttl_minutes" in data:
+        CACHE_TTL_MINUTES = data["cache_ttl_minutes"]
+    if "logo_url" in data:
+        LOGO_URL = data["logo_url"]
+
+    # ホワイトリスト反映（環境変数があれば環境変数もマージ）
+    whitelist = set()
+    env_wl = os.environ.get("JP_WHITELIST", "")
+    if env_wl:
+        whitelist.update(name.strip().lower() for name in env_wl.split(",") if name.strip())
+
+    remote_wl = data.get("jp_whitelist", [])
+    if isinstance(remote_wl, list):
+        whitelist.update(name.strip().lower() for name in remote_wl if name.strip())
+    elif isinstance(remote_wl, str):
+        whitelist.update(name.strip().lower() for name in remote_wl.split(",") if name.strip())
+
+    JP_WHITELIST.clear()
+    JP_WHITELIST.update(whitelist)
+
+    # 部門・マップ定義反映
+    if "divisions" in data and isinstance(data["divisions"], dict):
+        DIVISIONS.clear()
+        DIVISIONS.update(data["divisions"])
+
+
+def reload_config() -> bool:
+    """
+    GitHubから設定を取得して反映する。
+    失敗した場合はキャッシュファイルまたは既存設定を維持する。
+    """
+    url = _to_raw_url(REMOTE_CONFIG_URL)
+    data = None
+
+    try:
+        logger.info("GitHubから設定JSONを取得中: %s", url)
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+
+        # 取得成功時はバックアップとしてローカル保存
+        try:
+            os.makedirs(CACHE_DIR, exist_ok=True)
+            with open(LOCAL_CONFIG_CACHE, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        except OSError:
+            pass
+
+        logger.info("GitHubからの設定読み込みに成功しました。")
+
+    except Exception as e:
+        logger.warning("GitHubからの設定取得に失敗しました (%s)。ローカルキャッシュを試行します。", e)
+        if os.path.exists(LOCAL_CONFIG_CACHE):
+            try:
+                with open(LOCAL_CONFIG_CACHE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                logger.info("ローカルのバックアップ設定を読み込みました。")
+            except Exception as read_err:
+                logger.error("ローカルバックアップの読み込みにも失敗しました: %s", read_err)
+
+    if data:
+        _apply_config_data(data)
+        return True
+    return False
+
+
+# モジュールインポート時に初回ロードを実行
+reload_config()
