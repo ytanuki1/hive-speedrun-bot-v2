@@ -141,7 +141,14 @@ def _build_message_payload(
     Optional["LeaderboardView"],
     Optional[str],
 ]:
-    div_conf = config.DIVISIONS[division_key]
+    div_conf = config.DIVISIONS.get(division_key)
+    if not div_conf:
+        return (
+            None,
+            None,
+            None,
+            "指定された部門の設定が見つかりません。",
+        )
 
     page_data = cache_manager.get_page(country_key, division_key, page)
     if page_data is None:
@@ -211,7 +218,7 @@ def _build_message_payload(
 
     content = (
         f"**{tab_label} - Gravity {div_conf['label']}** （{range_label}）\n"
-        f"-# キャッシュ更新: {updated_str}（60分毎に自動更新）"
+        f"-# キャッシュ更新: {updated_str}（30分毎に自動更新）"
     )
 
     file = discord.File(fp=io.BytesIO(image_bytes), filename="leaderboard.png")
@@ -226,7 +233,7 @@ def _build_message_payload(
 
 
 class LeaderboardView(discord.ui.View):
-    """1-10th / 11-20th を切り替えるボタン付きView。"""
+    """ページを切り替えるボタン付きView。"""
 
     def __init__(
         self, country_key: str, division_key: str, current_page: int, max_page: int
@@ -346,7 +353,7 @@ async def on_ready() -> None:
     if not cache_refresh_loop.is_running():
         await run_initial_refresh()
         cache_refresh_loop.start()
-        logger.info("定期キャッシュ更新ループを開始しました（毎時00分 UTC基準）。")
+        logger.info("定期キャッシュ更新ループを開始しました。")
 
 
 # ------------------------------------------------------------
@@ -455,18 +462,23 @@ async def speedrun_command_error(
 
 @bot.tree.command(
     name="speedrun_refresh",
-    description="（管理者向け）speedrun.comから即時再取得し、キャッシュを更新します。",
+    description="（管理者向け）GitHubの設定とspeedrun.comのデータを即時再取得し、キャッシュを更新します。",
 )
 @app_commands.checks.has_permissions(administrator=True)
 async def speedrun_refresh_command(interaction: discord.Interaction) -> None:
     await interaction.response.defer(thinking=True, ephemeral=True)
     try:
+        # 1. GitHubの設定JSONを再取得してconfigを更新
+        config.reload_config()
+
+        # 2. speedrun.comから最新データを再取得してキャッシュ更新
         cache_manager.trigger_gas_refresh()
         await cache_manager.refresh_all()
+
     except GasClientError as e:
-        logger.error("手動更新中にGASエラーが発生しました: %s", e)
+        logger.error("手動更新中にAPIエラーが発生しました: %s", e)
         await interaction.followup.send(
-            f"GAS側でエラーが発生しました: {e}", ephemeral=True
+            f"データ取得側でエラーが発生しました: {e}", ephemeral=True
         )
         return
     except Exception:
@@ -476,7 +488,7 @@ async def speedrun_refresh_command(interaction: discord.Interaction) -> None:
         )
         return
     await interaction.followup.send(
-        "speedrun.comから再取得し、キャッシュを更新しました。", ephemeral=True
+        "GitHubの設定とspeedrun.comのデータを再取得し、キャッシュを更新しました。", ephemeral=True
     )
 
 
